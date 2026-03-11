@@ -1,71 +1,104 @@
-# 🤖 Hierarchical Modeling — Robot OpenGL
+# 🤖 Hierarchical Modeling — Robot OpenGL + Matrix Stack
 
-> Implementasi **Hierarchical Modeling** menggunakan **OpenGL + Matrix Stack** pada objek kompleks berupa Robot Sederhana.  
-> Tugas Kelompok — Mata Kuliah Grafika Komputer (IF216004)  
-> Jurusan Informatika · Fakultas Sains dan Teknologi · UIN Sunan Gunung Djati Bandung · 2022
+> **Tugas Kelompok — Grafika Komputer (IF216004)**
+> Implementasi *Hierarchical Modeling* pada OpenGL menggunakan **Matrix Stack** untuk pemodelan objek kompleks berbentuk Robot Sederhana.
 
 ---
 
-## 🖼️ Preview
+## 👥 Kelompok 6
 
-![Keyboard Control Guide](keyboard_guide.png)
+| Nama | NIM |
+|------|-----|
+| Ratu Qurratul Aini | 1237050084 |
+| Rizkia Nuari Fujiana | 1237050063 |
+| Rizki Maulana | 1237050088 |
+| Alya Khansa D | 1247050105 |
+
+> Jurusan Informatika · Fakultas Sains dan Teknologi · UIN Sunan Gunung Djati Bandung · 2022
+
+
+## 📋 Deskripsi Tugas
+
+Mengimplementasikan **Hierarchical Modeling** pada OpenGL menggunakan **Matrix Stack** untuk objek kompleks bebas. Program menampilkan robot 3D yang setiap bagian tubuhnya dapat digerakkan secara independen menggunakan keyboard, dengan transformasi yang dikelola melalui `glPushMatrix()` dan `glPopMatrix()`.
 
 ---
 
 ## 📁 Struktur Repository
 
 ```
-├── hierarchical_robot.py     # Source code utama OpenGL
-├── keyboard_guide.png        # Panduan kontrol keyboard
+├── hierarchical_robot.py     # Program utama OpenGL
+├── keyboard_guide.png        # Panduan tombol kontrol
 └── README.md
 ```
 
 ---
 
-## 📖 Deskripsi
+## 🌳 Scene Graph — Struktur Hierarki
 
-Program ini mengimplementasikan konsep **Hierarchical Modeling** pada grafika komputer menggunakan **PyOpenGL**. Objek kompleks yang dimodelkan adalah sebuah **Robot Sederhana** yang terdiri dari beberapa bagian tubuh yang saling terhubung secara hierarkis.
+Objek robot diorganisasikan dalam hierarki **parent–child** berikut:
 
-Setiap sendi robot merupakan titik pivot transformasi, sehingga rotasi pada bagian induk (*parent*) akan secara otomatis mempengaruhi bagian turunan (*child*) — inilah inti dari konsep **Matrix Stack** pada OpenGL.
+```
+ROBOT  (root)
+├── HEAD         → anggukan kepala
+└── TORSO
+    ├── LEFT_ARM
+    │   └── LEFT_FOREARM  → tangan kiri
+    ├── RIGHT_ARM
+    │   └── RIGHT_FOREARM → tangan kanan
+    ├── LEFT_LEG
+    │   └── LEFT_LOWER_LEG  → sepatu kiri
+    └── RIGHT_LEG
+        └── RIGHT_LOWER_LEG → sepatu kanan
+```
+
+Setiap node child **mewarisi transformasi dari parent-nya**. Misalnya, saat badan (TORSO) diputar, seluruh lengan dan kaki ikut bergerak mengikuti badan.
 
 ---
 
-## 🌲 Struktur Scene Graph (Hierarki Objek)
+## 🔑 Konsep Matrix Stack
 
-```
-ROBOT  (root — rotasi seluruh tubuh)
-├── HEAD        (anggukan kepala)
-├── TORSO
-│   ├── LEFT_ARM   ──→  LEFT_FOREARM   ──→  HAND
-│   └── RIGHT_ARM  ──→  RIGHT_FOREARM  ──→  HAND
-├── LEFT_LEG   ──→  LEFT_LOWER_LEG   ──→  SHOE
-└── RIGHT_LEG  ──→  RIGHT_LOWER_LEG  ──→  SHOE
-```
-
-Setiap node dalam pohon hierarki diimplementasikan menggunakan pasangan `glPushMatrix()` / `glPopMatrix()`:
+Program menggunakan pasangan `glPushMatrix()` / `glPopMatrix()` pada setiap sendi:
 
 ```python
-glPushMatrix()                    # Simpan state matrix (titik sendi)
-    glTranslatef(...)             # Geser ke posisi sendi
-    glRotatef(angle, ...)         # Rotasi di titik pivot
-    glTranslatef(...)             # Geser ke tengah segmen
-    draw_upper_arm()              # Gambar bagian tubuh
+glPushMatrix()                          # Simpan state matrix parent
+    glTranslatef(x_sendi, y_sendi, 0)   # Pindah ke titik sendi (pivot)
+    glRotatef(sudut, 1, 0, 0)           # Rotasi di titik sendi
+    glTranslatef(0, -panjang/2, 0)      # Pindah ke tengah segmen
+    draw_upper_arm()                     # Gambar segmen
 
-    glPushMatrix()                # Child mewarisi transformasi parent
-        glTranslatef(...)         # Geser ke siku
-        glRotatef(elbow_angle, .) # Rotasi forearm sendiri
-        draw_forearm()
-    glPopMatrix()                 # Selesai forearm → kembali ke bahu
+    glPushMatrix()                       # Child: forearm mewarisi posisi siku
+        glTranslatef(0, -panjang, 0)     # Turun ke ujung lengan atas (siku)
+        glRotatef(sudut_siku, 1, 0, 0)  # Rotasi di siku
+        draw_forearm()                   # Gambar forearm
+    glPopMatrix()                        # Kembali ke state siku
 
-glPopMatrix()                     # Selesai arm → kembali ke root
+glPopMatrix()                            # Kembali ke state parent (bahu)
 ```
+
+---
+
+## 🎮 Kontrol Keyboard
+
+![Keyboard Control Guide](keyboard_guide.png)
+
+| Tombol | Bagian Tubuh | Gerakan |
+|--------|-------------|---------|
+| `Q` / `A` | Seluruh Robot | Putar kiri / kanan |
+| `W` / `S` | Lengan Kiri Atas | Naik / turun |
+| `E` / `D` | Lengan Kanan Atas | Naik / turun |
+| `R` / `F` | Siku Kiri | Tekuk / lurus |
+| `T` / `G` | Siku Kanan | Tekuk / lurus |
+| `Y` / `H` | Kaki Kiri | Maju / mundur |
+| `U` / `J` | Kaki Kanan | Maju / mundur |
+| `I` / `K` | Kepala | Angguk atas / bawah |
+| `ESC` | — | Keluar program |
 
 ---
 
 ## ⚙️ Requirements
 
 ```
-Python >= 3.7
+Python  >= 3.7
 PyOpenGL
 PyOpenGL_accelerate
 ```
@@ -101,35 +134,38 @@ python hierarchical_robot.py
 
 ---
 
-## 🎮 Kontrol Keyboard
+## 💡 Penjelasan Teknis
 
-| Tombol | Bagian Tubuh | Fungsi |
-|--------|-------------|--------|
-| `Q` / `A` | Seluruh Robot | Putar kiri / kanan |
-| `W` / `S` | Lengan Kiri Atas | Naik / turun |
-| `E` / `D` | Lengan Kanan Atas | Naik / turun |
-| `R` / `F` | Siku Kiri | Tekuk / lurus |
-| `T` / `G` | Siku Kanan | Tekuk / lurus |
-| `Y` / `H` | Kaki Kiri | Maju / mundur |
-| `U` / `J` | Kaki Kanan | Maju / mundur |
-| `I` / `K` | Kepala | Angguk atas / bawah |
-| `ESC` | — | Keluar program |
+### Mengapa Matrix Stack?
 
----
+Tanpa matrix stack, transformasi pada parent akan terus terakumulasi dan mempengaruhi semua objek berikutnya secara global. Dengan `glPushMatrix()` dan `glPopMatrix()`, setiap node dapat menerapkan transformasinya secara **lokal** tanpa mengganggu node lain di hierarki.
 
-## 💡 Konsep yang Diimplementasikan
+### Alur Scene Graph Traversal (Depth-First)
 
-**Matrix Stack** adalah mekanisme OpenGL untuk menyimpan dan memulihkan state matriks transformasi. Fungsi utama yang digunakan:
-
-| Fungsi OpenGL | Kegunaan |
-|---------------|---------|
-| `glPushMatrix()` | Menyimpan matrix saat ini ke stack |
-| `glPopMatrix()` | Memulihkan matrix dari stack |
-| `glTranslatef()` | Translasi (menggeser posisi) |
-| `glRotatef()` | Rotasi di titik pivot |
-| `glScalef()` | Penskalaan objek |
-
-Dengan pola Push–Transform–Draw–Pop ini, setiap bagian anak mewarisi transformasi induknya tanpa mempengaruhi bagian lain di luar hierarkinya.
+```
+1. PUSH ROBOT    → rotasi seluruh tubuh
+   2. PUSH HEAD  → anggukan kepala
+   2. POP HEAD
+   2. PUSH TORSO → gambar badan
+      3. PUSH LEFT_ARM  → rotasi bahu kiri
+         4. PUSH LEFT_FOREARM → rotasi siku kiri
+         4. POP
+      3. POP LEFT_ARM
+      3. PUSH RIGHT_ARM → rotasi bahu kanan
+         4. PUSH RIGHT_FOREARM → rotasi siku kanan
+         4. POP
+      3. POP RIGHT_ARM
+   2. POP TORSO
+   2. PUSH LEFT_LEG  → rotasi pinggul kiri
+      3. PUSH LEFT_LOWER_LEG
+      3. POP
+   2. POP LEFT_LEG
+   2. PUSH RIGHT_LEG → rotasi pinggul kanan
+      3. PUSH RIGHT_LOWER_LEG
+      3. POP
+   2. POP RIGHT_LEG
+1. POP ROBOT
+```
 
 ---
 
@@ -141,11 +177,4 @@ Dengan pola Push–Transform–Draw–Pop ini, setiap bagian anak mewarisi trans
 4. Achmad Basuki & Nana Ramadijanti. 2016. *Grafika Komputer – Teori Dan Implementasi*. Penerbit ANDI: Yogyakarta *(Pustaka Pendukung)*
 5. Pulung Nurtantio Andono & T. Sutoyo. *Konsep Grafika Komputer*. Penerbit ANDI: Yogyakarta *(Pustaka Pendukung)*
 6. [www.opengl.org](https://www.opengl.org) *(Pustaka Utama)*
-7. [MIT OCW — Computer Graphics Fall 2012, Lecture 04](https://ocw.mit.edu/courses/electrical-engineering-and-computer-science/6-837-computer-graphics-fall-2012/lecture-notes/MIT6_837F12_Lec04.pdf)
-
----
-
-## 👥 Tim Pengembang
-
-> Tugas Kelompok — Grafika Komputer IF216004  
-> Jurusan Informatika · UIN Sunan Gunung Djati Bandung
+7. MIT OCW 6.837 Computer Graphics — [Lecture Notes Lec04](https://ocw.mit.edu/courses/electrical-engineering-and-computer-science/6-837-computer-graphics-fall-2012/lecture-notes/MIT6_837F12_Lec04.pdf)
