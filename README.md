@@ -14,7 +14,7 @@
 | Rizki Maulana | 1237050088 |
 | Alya Khansa D | 1247050105 |
 
-> Jurusan Informatika · Fakultas Sains dan Teknologi · UIN Sunan Gunung Djati Bandung · 2022
+> Jurusan Informatika · Fakultas Sains dan Teknologi · UIN Sunan Gunung Djati Bandung · 2023
 
 
 ## 📋 Deskripsi Tugas
